@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum QuestionType {
+  short_text
+  long_text
+  number
+  date
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  name            String?
+  surveyResponses SurveyResponse[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  completedSurvey completedSurvey[]
+}
+
+model Survey {
+  id              Int               @id @default(autoincrement())
+  title           String
+  description     String
+  questions       SurveyQuestion[]
+  responses       SurveyResponse[]
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  completedSurvey completedSurvey[]
+}
+
+model SurveyQuestion {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String
+  type        QuestionType
+  surveyId    Int
+  survey      Survey           @relation(fields: [surveyId], references: [id])
+  responses   SurveyResponse[]
+  isRequired  Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model SurveyResponse {
+  id         Int            @id @default(autoincrement())
+  userId     Int
+  user       User           @relation(fields: [userId], references: [id])
+  surveyId   Int
+  survey     Survey         @relation(fields: [surveyId], references: [id])
+  questionId Int
+  question   SurveyQuestion @relation(fields: [questionId], references: [id])
+  answer     String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([userId, questionId]) // Ensure one answer per question per user
+}
+
+model completedSurvey {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  surveyId  Int
+  survey    Survey   @relation(fields: [surveyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
