@@ -1,4 +1,5 @@
 import { PrismaClient, QuestionType } from "@prisma/client";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -129,8 +130,14 @@ async function main() {
       },
     },
   });
-
   console.log(user);
+
+  // create jwt token
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
+
+  console.log({ token });
+
+  console.log(token);
 }
 
 main()

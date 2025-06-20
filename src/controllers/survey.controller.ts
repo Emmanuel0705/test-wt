@@ -100,11 +100,18 @@ export class SurveyController {
     try {
       const { id } = req.params;
 
+      const userId = (req as any).user.userId;
+
       const survey = await prisma.survey.findUnique({
         where: { id: Number(id) },
         include: {
           questions: {
             orderBy: { id: "asc" },
+          },
+          completedSurvey: {
+            where: {
+              userId,
+            },
           },
         },
       });
@@ -113,7 +120,12 @@ export class SurveyController {
         return res.status(404).json({ error: "Survey not found" });
       }
 
-      res.json(survey);
+      const surveyWithCompleted = {
+        ...survey,
+        completedSurvey: survey.completedSurvey.length > 0,
+      };
+
+      res.json(surveyWithCompleted);
     } catch (error) {
       console.error("Get survey error:", error);
       res.status(500).json({ error: "Failed to get survey" });
@@ -122,19 +134,58 @@ export class SurveyController {
 
   static async getActiveSurveys(req: Request, res: Response) {
     try {
+      const userId = (req as any).user.userId;
+      // get active surveys with questions and add completed survey with user id, completedSurvey should be boolean value
       const surveys = await prisma.survey.findMany({
         where: { isActive: true },
         include: {
-          questions: {
-            orderBy: { id: "asc" },
+          completedSurvey: {
+            where: {
+              userId,
+            },
           },
         },
       });
 
-      res.json(surveys);
+      const surveysWithCompleted = surveys.map((survey) => {
+        return {
+          ...survey,
+          completedSurvey: survey.completedSurvey.length > 0,
+        };
+      });
+
+      res.json(surveysWithCompleted);
     } catch (error) {
       console.error("Get active surveys error:", error);
       res.status(500).json({ error: "Failed to get active surveys" });
+    }
+  }
+
+  static async getUserSurvey(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const userId = (req as any).user.userId;
+
+      // get survey with responses with survey id and user id
+
+      const survey = await prisma.survey.findUnique({
+        where: { id: Number(id) },
+        include: {
+          responses: {
+            include: {
+              question: true,
+            },
+            where: {
+              userId,
+            },
+          },
+        },
+      });
+
+      res.json(survey);
+    } catch (error) {
+      console.error("Get user survey error:", error);
+      res.status(500).json({ error: "Failed to get user survey" });
     }
   }
 }

@@ -22,8 +22,13 @@ app.post("/api/auth/google", AuthController.googleAuth);
 
 // Survey routes
 app.post("/api/surveys", authMiddleware, SurveyController.createSurvey);
-app.get("/api/surveys", SurveyController.getActiveSurveys);
-app.get("/api/surveys/:id", SurveyController.getSurvey);
+app.get("/api/surveys", authMiddleware, SurveyController.getActiveSurveys);
+app.get("/api/surveys/:id", authMiddleware, SurveyController.getSurvey);
+app.get(
+  "/api/surveys/review/:id",
+  authMiddleware,
+  SurveyController.getUserSurvey
+);
 app.post(
   "/api/surveys/submit",
   authMiddleware,
